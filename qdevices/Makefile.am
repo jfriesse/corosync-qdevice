@@ -90,6 +90,7 @@ corosync-qnetd-certutil: corosync-qnetd-certutil.sh
 	sed -e 's#@''DATADIR@#${datadir}#g' \
 	    -e 's#@''BASHPATH@#${BASHPATH}#g' \
 	    -e 's#@''COROSYSCONFDIR@#${COROSYSCONFDIR}#g' \
+	    -e 's#@''INITCONFIGDIR@#${INITCONFIGDIR}#g' \
 	    $< > $@
 
 endif

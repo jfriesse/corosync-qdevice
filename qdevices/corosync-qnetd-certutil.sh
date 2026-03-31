@@ -1,7 +1,7 @@
 #!@BASHPATH@
 
 #
-# Copyright (c) 2015-2018 Red Hat, Inc.
+# Copyright (c) 2015-2026 Red Hat, Inc.
 #
 # All rights reserved.
 #
@@ -50,12 +50,13 @@ CERTDB_FILES=("cert9.db key4.db pkcs11.txt"
               "cert8.db key3.db secmod.db")
 
 usage() {
-    echo "$0: [-i|-s] [-c certificate] [-G] [-n cluster_name]"
+    echo "$0: [-i|-s] [-c certificate] [-G] [-g keysize] [-n cluster_name]"
     echo
     echo " -i                  Initialize QNetd CA and generate server certificate"
     echo " -s                  Sign cluster certificate (needs cluster certificate)"
     echo " -c certificate      CRQ certificate file name"
     echo " -G                  Do not set group write bit for new files"
+    echo " -g keysize          Key size in bits - passed directly to certutil as -g parameter"
     echo " -n cluster_name     Name of cluster (for -s operation)"
 
     exit 0
@@ -120,6 +121,16 @@ find_certdb_files() {
     return 1
 }
 
+get_certutil_key_params() {
+    CERTUTIL_PARAMS=""
+
+    if [ ! -z "$COROSYNC_QNETD_CERTUTIL_KEY_SIZE" ];then
+        CERTUTIL_PARAMS="$CERTUTIL_PARAMS -g $COROSYNC_QNETD_CERTUTIL_KEY_SIZE"
+    fi
+
+    echo "$CERTUTIL_PARAMS"
+}
+
 init_qnetd_ca() {
     cert_files=`find_certdb_files`
     if [ "$cert_files" != "" ];then
@@ -159,14 +170,14 @@ init_qnetd_ca() {
     # Create self-signed certificate (CA). Asks 3 questions (is this CA, lifetime and critical extension
     echo -e "y\n0\ny\n" | certutil -S -n "$CA_NICKNAME" -s "$CA_SUBJECT" -x \
         -t "CT,," -m "$(get_serial_no)" -v $CRT_VALIDITY -d "$DB_DIR" \
-        -z "$NOISE_FILE" -f "$PWD_FILE" -2
+        -z "$NOISE_FILE" -f "$PWD_FILE" -2 $(get_certutil_key_params)
     # Export CA certificate in ascii
     certutil -L -d "$DB_DIR" -n "$CA_NICKNAME" > "$CA_EXPORT_FILE"
     certutil -L -d "$DB_DIR" -n "$CA_NICKNAME" -a >> "$CA_EXPORT_FILE"
     chown_ref_cfgdir "$CA_EXPORT_FILE"
 
     certutil -S -n "$SERVER_NICKNAME" -s "$SERVER_SUBJECT" -c "$CA_NICKNAME" -t "u,u,u" -m "$(get_serial_no)" \
-        -v $CRT_VALIDITY -d "$DB_DIR" -z "$NOISE_FILE" -f "$PWD_FILE"
+        -v $CRT_VALIDITY -d "$DB_DIR" -z "$NOISE_FILE" -f "$PWD_FILE" $(get_certutil_key_params)
 
     echo "QNetd CA certificate is exported as $CA_EXPORT_FILE"
 }
@@ -187,13 +198,20 @@ sign_cluster_cert() {
     echo "Certificate stored in $CRT_FILE"
 }
 
+# Initialize options that may be overwritten by the configuration file
+COROSYNC_QNETD_CERTUTIL_KEY_SIZE=""
+
+# Import configuration file if it exists
+if [ -f "@INITCONFIGDIR@/corosync-qnetd" ];then
+    . "@INITCONFIGDIR@/corosync-qnetd"
+fi
 
 OPERATION=""
 CERTIFICATE_FILE=""
 CLUSTER_NAME=""
 SET_GROUP_WRITE_BIT=true
 
-while getopts ":Ghisc:n:" opt; do
+while getopts ":Ghisc:g:n:" opt; do
     case $opt in
         i)
             OPERATION=init_qnetd_ca
@@ -209,6 +227,9 @@ while getopts ":Ghisc:n:" opt; do
             ;;
         G)
             SET_GROUP_WRITE_BIT=false
+            ;;
+        g)
+            COROSYNC_QNETD_CERTUTIL_KEY_SIZE="$OPTARG"
             ;;
         n)
             CLUSTER_NAME="$OPTARG"

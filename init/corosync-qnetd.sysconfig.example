@@ -1,4 +1,5 @@
-# Corosync Qdevice Network daemon init script configuration file
+# Configuration file for the Corosync Qdevice Network daemon init script,
+# systemd unit and corosync-qnetd-certutil tool.
 
 # COROSYNC_QNETD_OPTIONS specifies options passed to corosync-qnetd command
 # (default is no options).
@@ -11,3 +12,7 @@ COROSYNC_QNETD_OPTIONS=""
 # /var/run/corosync-qnetd
 # This has no effect if systemd unit is used (you have to change unit file)
 COROSYNC_QNETD_RUNAS=""
+
+# COROSYNC_QNETD_CERTUTIL_KEY_SIZE specifies the key size to use when generating
+# new public and private key pairs. This is equivalent to the -g option.
+#COROSYNC_QNETD_CERTUTIL_KEY_SIZE=""
