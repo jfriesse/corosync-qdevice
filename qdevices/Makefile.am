@@ -164,6 +164,7 @@ corosync-qdevice-net-certutil: corosync-qdevice-net-certutil.sh
 	sed -e 's#@''DATADIR@#${datadir}#g' \
 	    -e 's#@''BASHPATH@#${BASHPATH}#g' \
 	    -e 's#@''COROSYSCONFDIR@#${COROSYSCONFDIR}#g' \
+	    -e 's#@''INITCONFIGDIR@#${INITCONFIGDIR}#g' \
 	    $< > $@
 
 TESTS				= qnetd-cluster-list.test dynar.test dynar-simple-lex.test \

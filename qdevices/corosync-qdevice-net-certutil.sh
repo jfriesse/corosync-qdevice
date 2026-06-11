@@ -1,7 +1,7 @@
 #!@BASHPATH@
 
 #
-# Copyright (c) 2015-2018 Red Hat, Inc.
+# Copyright (c) 2015-2026 Red Hat, Inc.
 #
 # All rights reserved.
 #
@@ -52,7 +52,7 @@ REMOTE_SHELL_EXECUTABLE="ssh"
 REMOTE_COPY_EXECUTABLE="scp"
 
 usage() {
-    echo "$0: [-i|-m|-M|-r|-s|-Q] [-c certificate] [-S ssh_command] [-C scp_command] [-n cluster_name]"
+    echo "$0: [-i|-m|-M|-r|-s|-Q] [-c certificate] [-g keysize] [-S ssh_command] [-C scp_command] [-n cluster_name]"
     echo
     echo " -i      Initialize node CA. Needs CA certificate from server"
     echo " -m      Import cluster certificate on node (needs pk12 certificate)"
@@ -61,6 +61,7 @@ usage() {
     echo " -Q      Quick start. Uses ssh/scp to initialze both qnetd and nodes."
     echo ""
     echo " -c certificate      Ether CA, CRQ, CRT or pk12 certificate (operation dependant)"
+    echo " -g keysize          Key size in bits - passed directly to certutil as -g parameter"
     echo " -S ssh_command      Alternative remote shell command to be use in place of ssh. If not specified, ssh is used."
     echo " -C scp_command      Alternative remote copy command to be use in place of scp. If not specified, scp is used."
     echo " -n cluster_name     Name of cluster (for -r and -s operations)"
@@ -83,6 +84,16 @@ usage() {
     echo "  $0 -Q [-S ssh_command] [-C scp_command] -n Cluster qnetd_server node1 node2 ... nodeN"
 
     exit 0
+}
+
+get_certutil_key_params() {
+    CERTUTIL_PARAMS=""
+
+    if [ ! -z "$COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE" ];then
+        CERTUTIL_PARAMS="$CERTUTIL_PARAMS -g $COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE"
+    fi
+
+    echo "$CERTUTIL_PARAMS"
 }
 
 create_new_noise_file() {
@@ -178,7 +189,8 @@ gen_cluster_cert_req() {
 
     echo "Creating new certificate request"
 
-    certutil -R -s "CN=$CLUSTER_NAME" -o "$CRQ_FILE" -d "$DB_DIR" -f "$PWD_FILE" -z "$NOISE_FILE"
+    certutil -R -s "CN=$CLUSTER_NAME" -o "$CRQ_FILE" -d "$DB_DIR" -f "$PWD_FILE" -z "$NOISE_FILE" \
+        $(get_certutil_key_params)
 
     echo "Certificate request stored in $CRQ_FILE"
 }
@@ -276,11 +288,19 @@ quick_start() {
     done
 }
 
+# Initialize options that may be overwritten by the configuration file
+COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE=""
+
+# Import configuration file if it exists
+if [ -f "@INITCONFIGDIR@/corosync-qdevice" ];then
+    . "@INITCONFIGDIR@/corosync-qdevice"
+fi
+
 OPERATION=""
 CERTIFICATE_FILE=""
 CLUSTER_NAME=""
 
-while getopts ":hiMmQrc:S:C:n:" opt; do
+while getopts ":hiMmQrc:g:S:C:n:" opt; do
     case $opt in
         r)
             OPERATION=gen_cluster_cert_req
@@ -311,6 +331,9 @@ while getopts ":hiMmQrc:S:C:n:" opt; do
             ;;
         c)
             CERTIFICATE_FILE="$OPTARG"
+            ;;
+        g)
+            COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE="$OPTARG"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2

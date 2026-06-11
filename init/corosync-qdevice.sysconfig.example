@@ -1,6 +1,11 @@
-# Corosync Qdevice daemon init script configuration file
+# Configuration file for the Corosync Qdevice daemon init script,
+# systemd unit and corosync-qdevice-net-certutil tool.
 
 # COROSYNC_QDEVICE_OPTIONS specifies options passed to corosync-qdevice command
 # (default is no options).
 # See "man corosync-qdevice" for detailed descriptions of the options.
 COROSYNC_QDEVICE_OPTIONS=""
+
+# COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE specifies the key size to use when generating
+# new public and private key pairs. This is equivalent to the -g option.
+#COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE=""

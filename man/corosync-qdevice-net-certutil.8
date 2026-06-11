@@ -1,5 +1,5 @@
 .\"/*
-.\" * Copyright (C) 2016 Red Hat, Inc.
+.\" * Copyright (C) 2016-2026 Red Hat, Inc.
 .\" *
 .\" * All rights reserved.
 .\" *
@@ -31,11 +31,11 @@
 .\" * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\" * THE POSSIBILITY OF SUCH DAMAGE.
 .\" */
-.TH COROSYNC-QDEVICE-NET-CERTUTIL 8 2016-06-28
+.TH COROSYNC-QDEVICE-NET-CERTUTIL 8 2026-06-11
 .SH NAME
 corosync-qdevice-net-certutil - tool to generate qdevice model net TLS certificates
 .SH SYNOPSIS
-.B "corosync-qdevice-net-certutil [-i|-m|-M|-r|-s|-Q] [-c certificate] [-S ssh_command] [-C scp_command] [-n cluster_name]"
+.B "corosync-qdevice-net-certutil [-i|-m|-M|-r|-s|-Q] [-c certificate] [-g keysize] [-S ssh_command] [-C scp_command] [-n cluster_name]"
 .SH DESCRIPTION
 .B corosync-qdevice-net-certutil
 is a frontend for NSS certutil used for generating client certificate for the net model of
@@ -75,6 +75,16 @@ or ssh/scp will keep asking for a password - roughly 8 times the number of nodes
 .B -c
 File with certificate to load.
 .TP
+.B -g
+Specify the key size to use when generating new public and private key pairs.
+This option is passed directly to the
+.B certutil
+command. By default, this is left empty, meaning
+.B -g
+is not passed to
+.B certutil
+at all.
+.TP
 .B -S
 Alternative remote shell command to be use in place of ssh. If not specified, ssh is used.
 .TP
@@ -86,6 +96,7 @@ Name of the cluster.
 .SH SEE ALSO
 .BR corosync-qnetd (8)
 .BR corosync-qdevice (8)
+.BR certutil(1)
 .SH AUTHOR
 Jan Friesse
 .PP
