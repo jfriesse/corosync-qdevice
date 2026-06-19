@@ -35,7 +35,7 @@
 .SH NAME
 corosync-qdevice-net-certutil - tool to generate qdevice model net TLS certificates
 .SH SYNOPSIS
-.B "corosync-qdevice-net-certutil [-i|-m|-M|-r|-s|-Q] [-c certificate] [-g keysize] [-S ssh_command] [-C scp_command] [-n cluster_name]"
+.B "corosync-qdevice-net-certutil [-i|-M|-m|-Q|-r] [-C scp_command] [-c certificate] [-g keysize] [-n cluster_name] [-S ssh_command]"
 .SH DESCRIPTION
 .B corosync-qdevice-net-certutil
 is a frontend for NSS certutil used for generating client certificate for the net model of
@@ -50,19 +50,12 @@ has to be writable by the current user. It needs the QNetd CA certificate passed
 parameter. This certificate can be found on the server running QNetd in the file
 /etc/corosync/qnetd/nssdb/qnetd-cacert.crt.
 .TP
-.B -m
-Import the cluster certificate and key from a pk12 file.
-.TP
-.B -r
-Generate a certificate request. The certificate request is exported into
-/etc/corosync/qdevice/net/qdevice-net-node.crq. It is necessary to
-pass the cluster name using the
-.B -n
-parameter. The cluster name has to match the one defined in /etc/corosync/corosync.conf.
-.TP
 .B -M
 Import a signed certificate and export a certificate with private key into
 pk12 file.
+.TP
+.B -m
+Import the cluster certificate and key from a pk12 file.
 .TP
 .B -Q
 Use ssh/scp to properly set both
@@ -71,6 +64,16 @@ and
 .B corosync-qdevice
 certificates on all nodes. It's highly recommended that you use an ssh agent,
 or ssh/scp will keep asking for a password - roughly 8 times the number of nodes.
+.TP
+.B -r
+Generate a certificate request. The certificate request is exported into
+/etc/corosync/qdevice/net/qdevice-net-node.crq. It is necessary to
+pass the cluster name using the
+.B -n
+parameter. The cluster name has to match the one defined in /etc/corosync/corosync.conf.
+.TP
+.B -C
+Alternative remote copy command to be use in place of scp. If not specified, scp is used.
 .TP
 .B -c
 File with certificate to load.
@@ -85,14 +88,11 @@ is not passed to
 .B certutil
 at all.
 .TP
-.B -S
-Alternative remote shell command to be use in place of ssh. If not specified, ssh is used.
-.TP
-.B -C
-Alternative remote copy command to be use in place of scp. If not specified, scp is used.
-.TP
 .B -n
 Name of the cluster.
+.TP
+.B -S
+Alternative remote shell command to be use in place of ssh. If not specified, ssh is used.
 .SH SEE ALSO
 .BR corosync-qnetd (8)
 .BR corosync-qdevice (8)
