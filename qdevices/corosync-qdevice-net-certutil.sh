@@ -123,8 +123,6 @@ find_certdb_files() {
             return 0
         fi
     done
-
-    return 1
 }
 
 init_node_ca() {
@@ -245,7 +243,7 @@ quick_start() {
     done
 
     # Initialize qnetd server (it's no problem if server is already initialized)
-    $REMOTE_SHELL_EXECUTABLE "root@$qnetd_addr" "$QNETD_CERTUTIL_CMD -i"
+    $REMOTE_SHELL_EXECUTABLE "root@$qnetd_addr" "$QNETD_CERTUTIL_CMD -i" || true
 
     # Copy CA cert to all nodes and initialize them
     for node in "$master_node" $other_nodes;do
@@ -272,7 +270,10 @@ quick_start() {
     # Copy pk12 cert to all nodes and import it
     for node in $other_nodes;do
         remote_scp "root@$master_node:$P12_FILE" "$node:$P12_FILE"
-        $REMOTE_SHELL_EXECUTABLE "root@$node" "$0 -m -c \"$P12_FILE\""
+
+        # Ignore import errors (no easy way to remove "improperly formatted DER-encoded" message
+        # resulting in error code != 0 but successful import)
+        $REMOTE_SHELL_EXECUTABLE "root@$node" "$0 -m -c \"$P12_FILE\"" || true
     done
 }
 
@@ -283,6 +284,10 @@ COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE=""
 if [ -f "@INITCONFIGDIR@/corosync-qdevice" ];then
     . "@INITCONFIGDIR@/corosync-qdevice"
 fi
+
+# Strict mode
+set -euo pipefail
+trap 's=$?; echo >&2 "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
 
 OPERATION=""
 CERTIFICATE_FILE=""
@@ -378,31 +383,30 @@ case "$OPERATION" in
     "quick_start")
         shift $((OPTIND-1))
 
-        qnetd_addr="$1"
-
-        shift 1
-
-        master_node="$1"
-        shift 1
-        other_nodes="$*"
-
         if [ "$CLUSTER_NAME" == "" ];then
             echo "You have to specify cluster name" >&2
 
             exit 2
         fi
 
+        qnetd_addr=${1:-}
         if [ "$qnetd_addr" == "" ];then
             echo "No QNetd server address provided." >&2
 
             exit 2
         fi
 
+        shift 1
+
+        master_node=${1:-}
         if [ "$master_node" == "" ];then
             echo "No nodes provided." >&2
 
             exit 2
         fi
+
+        shift 1
+        other_nodes="$*"
 
         quick_start "$qnetd_addr" "$master_node" "$other_nodes"
     ;;

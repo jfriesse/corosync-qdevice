@@ -71,7 +71,9 @@ chown_ref_cfgdir() {
 # get_perm [directory]
 # Return permission based on -G and directory flag
 get_perm() {
-    if [ "$1" == true ];then
+    directory=${1:-}
+
+    if [ "$directory" == true ];then
         [ "$SET_GROUP_WRITE_BIT" == true ] && echo "0770" || echo "0750"
     else
         [ "$SET_GROUP_WRITE_BIT" == true ] && echo "0660" || echo "0640"
@@ -117,8 +119,6 @@ find_certdb_files() {
             return 0
         fi
     done
-
-    return 1
 }
 
 get_certutil_key_params() {
@@ -171,6 +171,7 @@ init_qnetd_ca() {
     echo -e "y\n0\ny\n" | certutil -S -n "$CA_NICKNAME" -s "$CA_SUBJECT" -x \
         -t "CT,," -m "$(get_serial_no)" -v $CRT_VALIDITY -d "$DB_DIR" \
         -z "$NOISE_FILE" -f "$PWD_FILE" -2 $(get_certutil_key_params)
+
     # Export CA certificate in ascii
     certutil -L -d "$DB_DIR" -n "$CA_NICKNAME" > "$CA_EXPORT_FILE"
     certutil -L -d "$DB_DIR" -n "$CA_NICKNAME" -a >> "$CA_EXPORT_FILE"
@@ -205,6 +206,10 @@ COROSYNC_QNETD_CERTUTIL_KEY_SIZE=""
 if [ -f "@INITCONFIGDIR@/corosync-qnetd" ];then
     . "@INITCONFIGDIR@/corosync-qnetd"
 fi
+
+# Strict mode
+set -euo pipefail
+trap 's=$?; echo >&2 "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
 
 OPERATION=""
 CERTIFICATE_FILE=""
