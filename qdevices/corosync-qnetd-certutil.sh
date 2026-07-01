@@ -49,6 +49,13 @@ CA_EXPORT_FILE="$DB_DIR/qnetd-cacert.crt"
 CERTDB_FILES=("cert9.db key4.db pkcs11.txt"
               "cert8.db key3.db secmod.db")
 
+# errx exit_code message
+errx() {
+    echo "$2" >&2
+
+    exit "$1"
+}
+
 usage() {
     echo "$0: [-i|-s] [-c certificate] [-G] [-g keysize] [-n cluster_name]"
     echo
@@ -134,9 +141,7 @@ get_certutil_key_params() {
 init_qnetd_ca() {
     cert_files=`find_certdb_files`
     if [ "$cert_files" != "" ];then
-        echo "Certificate database ($DB_DIR) already exists. Delete it to initialize new db" >&2
-
-        exit 1
+        errx 1 "Certificate database ($DB_DIR) already exists. Delete it to initialize new db"
     fi
 
     if ! [ -d "$DB_DIR" ];then
@@ -154,9 +159,7 @@ init_qnetd_ca() {
     certutil -N -d "$DB_DIR" -f "$PWD_FILE"
     cert_files=`find_certdb_files`
     if [ "$cert_files" == "" ];then
-        echo "Can't find certificate database files. Certificate database ($DB_DIR) cannot be created" >&2
-
-        exit 1
+        errx 1 "Can't find certificate database files. Certificate database ($DB_DIR) cannot be created"
     fi
 
     for fname in $cert_files;do
@@ -187,9 +190,7 @@ init_qnetd_ca() {
 sign_cluster_cert() {
     cert_files=`find_certdb_files`
     if [ "$cert_files" == "" ];then
-        echo "Certificate database doesn't exists. Use $0 -i to create it" >&2
-
-        exit 1
+        errx 1 "Certificate database doesn't exists. Use $0 -i to create it"
     fi
 
     echo "Signing cluster certificate"
@@ -240,14 +241,10 @@ while getopts ":Ghisc:g:n:" opt; do
             CLUSTER_NAME="$OPTARG"
             ;;
         \?)
-            echo "Invalid option: -$OPTARG" >&2
-
-            exit 1
+            errx 1 "Invalid option: -$OPTARG"
             ;;
         :)
-            echo "Option -$OPTARG requires an argument." >&2
-
-            exit 1
+            errx 1 "Option -$OPTARG requires an argument."
             ;;
    esac
 done
@@ -262,15 +259,11 @@ case "$OPERATION" in
     ;;
     "sign_cluster_cert")
         if ! [ -e "$CERTIFICATE_FILE" ];then
-            echo "Can't open certificate file $CERTIFICATE_FILE" >&2
-
-            exit 2
+            errx 2 "Can't open certificate file $CERTIFICATE_FILE"
         fi
 
         if [ "$CLUSTER_NAME" == "" ];then
-            echo "You have to specify cluster name" >&2
-
-            exit 2
+            errx 2 "You have to specify cluster name"
         fi
 
         sign_cluster_cert

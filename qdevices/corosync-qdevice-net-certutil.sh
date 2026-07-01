@@ -53,6 +53,13 @@ CERTDB_FILES=("cert9.db key4.db pkcs11.txt"
 REMOTE_SHELL_EXECUTABLE="ssh"
 REMOTE_COPY_EXECUTABLE="scp"
 
+# errx exit_code message
+errx() {
+    echo "$2" >&2
+
+    exit "$1"
+}
+
 usage() {
     echo "$0: [-i|-M|-m|-Q|-r] [-C scp_command] [-c certificate] [-g keysize] [-n cluster_name] [-S ssh_command]"
     echo
@@ -128,9 +135,7 @@ find_certdb_files() {
 init_node_ca() {
     cert_files=`find_certdb_files`
     if [ "$cert_files" != "" ];then
-        echo "Certificate database already exists. Delete it to continue" >&2
-
-        exit 1
+        errx 1 "Certificate database already exists. Delete it to continue"
     fi
 
     if ! [ -d "$DB_DIR" ];then
@@ -147,9 +152,7 @@ init_node_ca() {
     certutil -N -d "$DB_DIR" -f "$PWD_FILE"
     cert_files=`find_certdb_files`
     if [ "$cert_files" == "" ];then
-        echo "Can't find certificate database files. Certificate database ($DB_DIR) cannot be created" >&2
-
-        exit 1
+        errx 1 "Can't find certificate database files. Certificate database ($DB_DIR) cannot be created"
     fi
 
     for fname in $cert_files;do
@@ -168,9 +171,7 @@ init_node_ca() {
 gen_cluster_cert_req() {
     cert_files=`find_certdb_files`
     if [ "$cert_files" == "" ];then
-        echo "Certificate database doesn't exists. Use $0 -i to create it" >&2
-
-        exit 1
+        errx 1 "Certificate database doesn't exists. Use $0 -i to create it"
     fi
 
     echo "Creating new certificate request"
@@ -184,9 +185,7 @@ gen_cluster_cert_req() {
 import_signed_cert() {
     cert_files=`find_certdb_files`
     if [ "$cert_files" == "" ];then
-        echo "Certificate database doesn't exists. Use $0 -i to create it" >&2
-
-        exit 1
+        errx 1 "Certificate database doesn't exists. Use $0 -i to create it"
     fi
 
     echo "Importing signed cluster certificate"
@@ -200,9 +199,7 @@ import_signed_cert() {
 import_pk12() {
     cert_files=`find_certdb_files`
     if [ "$cert_files" == "" ];then
-        echo "Certificate database doesn't exists. Use $0 -i to create it" >&2
-
-        exit 1
+        errx 1 "Certificate database doesn't exists. Use $0 -i to create it"
     fi
 
     echo "Importing cluster certificate and key"
@@ -230,15 +227,11 @@ quick_start() {
     # Sanity check
     for i in "$master_node" $other_nodes;do
         if $REMOTE_SHELL_EXECUTABLE root@$i "[ -d \"$DB_DIR\" ]";then
-            echo "Node $i seems to be already initialized. Please delete $DB_DIR" >&2
-
-            exit 1
+            errx 1 "Node $i seems to be already initialized. Please delete $DB_DIR"
         fi
 
         if ! $REMOTE_SHELL_EXECUTABLE "root@$i" "$0" > /dev/null;then
-            echo "Node $i doesn't have $0 installed" >&2
-
-            exit 1
+            errx 1 "Node $i doesn't have $0 installed"
         fi
     done
 
@@ -329,14 +322,10 @@ while getopts ":hiMmQrC:c:g:n:S:" opt; do
             REMOTE_SHELL_EXECUTABLE="$OPTARG"
             ;;
         \?)
-            echo "Invalid option: -$OPTARG" >&2
-
-            exit 1
+            errx 1 "Invalid option: -$OPTARG"
             ;;
         :)
-            echo "Option -$OPTARG requires an argument." >&2
-
-            exit 1
+            errx 1 "Option -$OPTARG requires an argument."
             ;;
    esac
 done
@@ -346,36 +335,28 @@ done
 case "$OPERATION" in
     "init_node_ca")
         if ! [ -e "$CERTIFICATE_FILE" ];then
-            echo "Can't open certificate file $CERTIFICATE_FILE" >&2
-
-            exit 2
+            errx 2 "Can't open certificate file $CERTIFICATE_FILE"
         fi
 
         init_node_ca
     ;;
     "gen_cluster_cert_req")
         if [ "$CLUSTER_NAME" == "" ];then
-            echo "You have to specify cluster name" >&2
-
-            exit 2
+            errx 2 "You have to specify cluster name"
         fi
 
         gen_cluster_cert_req
     ;;
     "import_signed_cert")
         if ! [ -e "$CERTIFICATE_FILE" ];then
-            echo "Can't open certificate file $CERTIFICATE_FILE" >&2
-
-            exit 2
+            errx 2 "Can't open certificate file $CERTIFICATE_FILE"
         fi
 
         import_signed_cert
     ;;
     "import_pk12")
         if ! [ -e "$CERTIFICATE_FILE" ];then
-            echo "Can't open certificate file $CERTIFICATE_FILE" >&2
-
-            exit 2
+            errx 2 "Can't open certificate file $CERTIFICATE_FILE"
         fi
 
         import_pk12
@@ -384,25 +365,19 @@ case "$OPERATION" in
         shift $((OPTIND-1))
 
         if [ "$CLUSTER_NAME" == "" ];then
-            echo "You have to specify cluster name" >&2
-
-            exit 2
+            errx 2 "You have to specify cluster name"
         fi
 
         qnetd_addr=${1:-}
         if [ "$qnetd_addr" == "" ];then
-            echo "No QNetd server address provided." >&2
-
-            exit 2
+            errx 2 "No QNetd server address provided."
         fi
 
         shift 1
 
         master_node=${1:-}
         if [ "$master_node" == "" ];then
-            echo "No nodes provided." >&2
-
-            exit 2
+            errx 2 "No nodes provided."
         fi
 
         shift 1
