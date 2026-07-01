@@ -57,14 +57,16 @@ errx() {
 }
 
 usage() {
-    echo "$0: [-i|-s] [-c certificate] [-G] [-g keysize] [-n cluster_name]"
+    echo "$0: [-i|-s] [-c certificate] [-G] [-g keysize] [-k keytype] [-n cluster_name] [-q paramset]"
     echo
     echo " -i                  Initialize QNetd CA and generate server certificate"
     echo " -s                  Sign cluster certificate (needs cluster certificate)"
     echo " -c certificate      CRQ certificate file name"
     echo " -G                  Do not set group write bit for new files"
     echo " -g keysize          Key size in bits - passed directly to certutil as -g parameter"
+    echo " -k keytype          Type of key - passed directly to certutil as -k parameter"
     echo " -n cluster_name     Name of cluster (for -s operation)"
+    echo " -q paramset         Parameter set (curve name, ml-dsa set) - passed directly to certutil as -q parameter"
 
     exit 0
 }
@@ -135,6 +137,14 @@ get_certutil_key_params() {
         CERTUTIL_PARAMS="$CERTUTIL_PARAMS -g $COROSYNC_QNETD_CERTUTIL_KEY_SIZE"
     fi
 
+    if [ ! -z "$COROSYNC_QNETD_CERTUTIL_KEY_TYPE" ];then
+        CERTUTIL_PARAMS="$CERTUTIL_PARAMS -k $COROSYNC_QNETD_CERTUTIL_KEY_TYPE"
+    fi
+
+    if [ ! -z "$COROSYNC_QNETD_CERTUTIL_PARAMSET" ];then
+        CERTUTIL_PARAMS="$CERTUTIL_PARAMS -q $COROSYNC_QNETD_CERTUTIL_PARAMSET"
+    fi
+
     echo "$CERTUTIL_PARAMS"
 }
 
@@ -202,6 +212,8 @@ sign_cluster_cert() {
 
 # Initialize options that may be overwritten by the configuration file
 COROSYNC_QNETD_CERTUTIL_KEY_SIZE=""
+COROSYNC_QNETD_CERTUTIL_KEY_TYPE=""
+COROSYNC_QNETD_CERTUTIL_PARAMSET=""
 
 # Import configuration file if it exists
 if [ -f "@INITCONFIGDIR@/corosync-qnetd" ];then
@@ -217,7 +229,7 @@ CERTIFICATE_FILE=""
 CLUSTER_NAME=""
 SET_GROUP_WRITE_BIT=true
 
-while getopts ":Ghisc:g:n:" opt; do
+while getopts ":Ghisc:g:k:n:q:" opt; do
     case $opt in
         i)
             OPERATION=init_qnetd_ca
@@ -237,8 +249,14 @@ while getopts ":Ghisc:g:n:" opt; do
         g)
             COROSYNC_QNETD_CERTUTIL_KEY_SIZE="$OPTARG"
             ;;
+        k)
+            COROSYNC_QNETD_CERTUTIL_KEY_TYPE="$OPTARG"
+            ;;
         n)
             CLUSTER_NAME="$OPTARG"
+            ;;
+        q)
+            COROSYNC_QNETD_CERTUTIL_PARAMSET="$OPTARG"
             ;;
         \?)
             errx 1 "Invalid option: -$OPTARG"

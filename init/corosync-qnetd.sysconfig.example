@@ -16,3 +16,12 @@ COROSYNC_QNETD_RUNAS=""
 # COROSYNC_QNETD_CERTUTIL_KEY_SIZE specifies the key size to use when generating
 # new public and private key pairs. This is equivalent to the -g option.
 #COROSYNC_QNETD_CERTUTIL_KEY_SIZE=""
+
+# COROSYNC_QNETD_CERTUTIL_KEY_TYPE specifies the key type to use when generating
+# new public and private key pairs. This is equivalent to the -k option.
+#COROSYNC_QNETD_CERTUTIL_KEY_TYPE=""
+
+# COROSYNC_QNETD_CERTUTIL_PARAMSET specifies the curve-name or ml-dsa-parameter-set
+# to use when generating new public and private key pairs.
+# This is equivalent to the -q option.
+#COROSYNC_QNETD_CERTUTIL_PARAMSET=""
