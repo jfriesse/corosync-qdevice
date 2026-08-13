@@ -61,7 +61,7 @@ errx() {
 }
 
 usage() {
-    echo "$0: [-i|-M|-m|-Q|-r] [-C scp_command] [-c certificate] [-g keysize] [-n cluster_name] [-S ssh_command]"
+    echo "$0: [-i|-M|-m|-Q|-r] [-C scp_command] [-c certificate] [-g keysize] [-k keytype] [-n cluster_name] [-S ssh_command] [-q paramset]"
     echo
     echo " -i      Initialize node CA. Needs CA certificate from server"
     echo " -M      Import signed cluster certificate and export certificate with key to pk12 file"
@@ -72,8 +72,10 @@ usage() {
     echo " -C scp_command      Alternative remote copy command to be use in place of scp. If not specified, scp is used."
     echo " -c certificate      Ether CA, CRQ, CRT or pk12 certificate (operation dependant)"
     echo " -g keysize          Key size in bits - passed directly to certutil as -g parameter"
+    echo " -k keytype          Type of key - passed directly to certutil as -k parameter"
     echo " -n cluster_name     Name of cluster (for -r and -s operations)"
     echo " -S ssh_command      Alternative remote shell command to be use in place of ssh. If not specified, ssh is used."
+    echo " -q paramset         Parameter set (curve name, ml-dsa set) - passed directly to certutil as -q parameter"
     echo ""
     echo "Typical usage:"
     echo "- Initialize database on QNetd server by running $QNETD_CERTUTIL_CMD -i"
@@ -100,6 +102,14 @@ get_certutil_key_params() {
 
     if [ ! -z "$COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE" ];then
         CERTUTIL_PARAMS="$CERTUTIL_PARAMS -g $COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE"
+    fi
+
+    if [ ! -z "$COROSYNC_QDEVICE_NET_CERTUTIL_KEY_TYPE" ];then
+        CERTUTIL_PARAMS="$CERTUTIL_PARAMS -k $COROSYNC_QDEVICE_NET_CERTUTIL_KEY_TYPE"
+    fi
+
+    if [ ! -z "$COROSYNC_QDEVICE_NET_CERTUTIL_PARAMSET" ];then
+        CERTUTIL_PARAMS="$CERTUTIL_PARAMS -q $COROSYNC_QDEVICE_NET_CERTUTIL_PARAMSET"
     fi
 
     echo "$CERTUTIL_PARAMS"
@@ -272,6 +282,8 @@ quick_start() {
 
 # Initialize options that may be overwritten by the configuration file
 COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE=""
+COROSYNC_QDEVICE_NET_CERTUTIL_KEY_TYPE=""
+COROSYNC_QDEVICE_NET_CERTUTIL_PARAMSET=""
 
 # Import configuration file if it exists
 if [ -f "@INITCONFIGDIR@/corosync-qdevice" ];then
@@ -286,7 +298,7 @@ OPERATION=""
 CERTIFICATE_FILE=""
 CLUSTER_NAME=""
 
-while getopts ":hiMmQrC:c:g:n:S:" opt; do
+while getopts ":hiMmQrC:c:g:k:n:S:q:" opt; do
     case $opt in
         i)
             OPERATION=init_node_ca
@@ -315,11 +327,17 @@ while getopts ":hiMmQrC:c:g:n:S:" opt; do
         g)
             COROSYNC_QDEVICE_NET_CERTUTIL_KEY_SIZE="$OPTARG"
             ;;
+        k)
+            COROSYNC_QDEVICE_NET_CERTUTIL_KEY_TYPE="$OPTARG"
+            ;;
         n)
             CLUSTER_NAME="$OPTARG"
             ;;
         S)
             REMOTE_SHELL_EXECUTABLE="$OPTARG"
+            ;;
+        q)
+            COROSYNC_QDEVICE_NET_CERTUTIL_PARAMSET="$OPTARG"
             ;;
         \?)
             errx 1 "Invalid option: -$OPTARG"

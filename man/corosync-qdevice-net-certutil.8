@@ -31,11 +31,11 @@
 .\" * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\" * THE POSSIBILITY OF SUCH DAMAGE.
 .\" */
-.TH COROSYNC-QDEVICE-NET-CERTUTIL 8 2026-06-11
+.TH COROSYNC-QDEVICE-NET-CERTUTIL 8 2026-08-13
 .SH NAME
 corosync-qdevice-net-certutil - tool to generate qdevice model net TLS certificates
 .SH SYNOPSIS
-.B "corosync-qdevice-net-certutil [-i|-M|-m|-Q|-r] [-C scp_command] [-c certificate] [-g keysize] [-n cluster_name] [-S ssh_command]"
+.B "corosync-qdevice-net-certutil [-i|-M|-m|-Q|-r] [-C scp_command] [-c certificate] [-g keysize] [-k keytype] [-n cluster_name] [-S ssh_command] [-q paramset]"
 .SH DESCRIPTION
 .B corosync-qdevice-net-certutil
 is a frontend for NSS certutil used for generating client certificate for the net model of
@@ -88,11 +88,31 @@ is not passed to
 .B certutil
 at all.
 .TP
+.B -k
+Specify the key type to use when generating new public and private key pairs.
+This option is passed directly to the
+.B certutil
+command. By default, this is left empty, meaning
+.B -k
+is not passed to
+.B certutil
+at all.
+.TP
 .B -n
 Name of the cluster.
 .TP
 .B -S
 Alternative remote shell command to be use in place of ssh. If not specified, ssh is used.
+.TP
+.B -q
+Specify the curve-name or ml-dsa-parameter-set to use when generating new public
+and private key pairs. This option is passed directly to the
+.B certutil
+command. By default, this is left empty, meaning
+.B -q
+is not passed to
+.B certutil
+at all.
 .SH SEE ALSO
 .BR corosync-qnetd (8)
 .BR corosync-qdevice (8)
