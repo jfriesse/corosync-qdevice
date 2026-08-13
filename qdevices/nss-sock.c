@@ -468,8 +468,7 @@ nss_sock_start_ssl_as_server(PRFileDesc *input_sock, CERTCertificate *server_cer
 		return (NULL);
 	}
 
-	if (SSL_ConfigSecureServer(ssl_sock, server_cert, server_key,
-	    NSS_FindCertKEAType(server_cert)) != SECSuccess) {
+	if (SSL_ConfigServerCert(ssl_sock, server_cert, server_key, NULL, 0) != SECSuccess) {
 		return (NULL);
 	}
 
