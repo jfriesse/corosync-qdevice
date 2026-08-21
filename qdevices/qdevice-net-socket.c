@@ -286,8 +286,9 @@ qdevice_net_socket_write_finished(struct qdevice_net_instance *instance)
 		if ((new_pr_fd = nss_sock_start_ssl_as_client(instance->socket,
 		    instance->advanced_settings->net_nss_qnetd_cn,
 		    qdevice_net_nss_bad_cert_hook,
-		    qdevice_net_nss_get_client_auth_data,
-		    instance, 0, NULL)) == NULL) {
+		    qdevice_net_nss_get_client_auth_data, instance,
+		    qdevice_net_nss_handshake_callback, NULL,
+		    0, NULL)) == NULL) {
 			log_nss(LOG_ERR, "Can't start TLS");
 			instance->disconnect_reason = QDEVICE_NET_DISCONNECT_REASON_CANT_START_TLS;
 			return (-1);

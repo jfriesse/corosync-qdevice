@@ -49,6 +49,8 @@ extern SECStatus		qdevice_net_nss_get_client_auth_data(void *arg,
     PRFileDesc *sock, struct CERTDistNamesStr *caNames,
     struct CERTCertificateStr **pRetCert, struct SECKEYPrivateKeyStr **pRetKey);
 
+extern void			qdevice_net_nss_handshake_callback(PRFileDesc *fd,
+    void *client_data);
 
 #ifdef __cplusplus
 }

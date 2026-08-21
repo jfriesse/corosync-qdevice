@@ -67,8 +67,10 @@ extern PRFileDesc 	*nss_sock_create_client_socket(const char *hostname, uint16_t
     PRIntn af, PRIntervalTime timeout);
 
 extern PRFileDesc	*nss_sock_start_ssl_as_client(PRFileDesc *input_sock, const char *ssl_url,
-    SSLBadCertHandler bad_cert_hook, SSLGetClientAuthData client_auth_hook,
-    void *client_auth_hook_arg, int force_handshake, int *reset_would_block);
+    SSLBadCertHandler bad_cert_hook,
+    SSLGetClientAuthData client_auth_hook, void *client_auth_hook_arg,
+    SSLHandshakeCallback handshake_callback, void *handshake_callback_arg,
+    int force_handshake, int *reset_would_block);
 
 extern PRFileDesc	*nss_sock_start_ssl_as_server(PRFileDesc *input_sock,
     CERTCertificate *server_cert, SECKEYPrivateKey *server_key, int require_client_cert,

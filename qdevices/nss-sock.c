@@ -401,8 +401,10 @@ nss_sock_non_blocking_client_succeeded(const PRPollDesc *pfd)
  */
 PRFileDesc *
 nss_sock_start_ssl_as_client(PRFileDesc *input_sock, const char *ssl_url,
-    SSLBadCertHandler bad_cert_hook, SSLGetClientAuthData client_auth_hook,
-    void *client_auth_hook_arg, int force_handshake, int *reset_would_block)
+    SSLBadCertHandler bad_cert_hook,
+    SSLGetClientAuthData client_auth_hook, void *client_auth_hook_arg,
+    SSLHandshakeCallback handshake_callback, void *handshake_callback_arg,
+    int force_handshake, int *reset_would_block)
 {
 	PRFileDesc *ssl_sock;
 
@@ -431,6 +433,12 @@ nss_sock_start_ssl_as_client(PRFileDesc *input_sock, const char *ssl_url,
 	if (client_auth_hook != NULL &&
 	    (SSL_GetClientAuthDataHook(ssl_sock, client_auth_hook,
 	    client_auth_hook_arg) != SECSuccess)) {
+		return (NULL);
+	}
+
+	if (handshake_callback != NULL &&
+	    (SSL_HandshakeCallback(ssl_sock, handshake_callback,
+	    handshake_callback_arg) != SECSuccess)) {
 		return (NULL);
 	}
 

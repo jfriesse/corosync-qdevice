@@ -72,3 +72,71 @@ qdevice_net_nss_get_client_auth_data(void *arg, PRFileDesc *sock, struct CERTDis
 	return (NSS_GetClientAuthData((void *)instance->advanced_settings->net_nss_client_cert_nickname,
 	    sock, caNames, pRetCert, pRetKey));
 }
+
+static void
+qdevice_net_nss_dump_cert_info(const char *prefix, CERTCertificate *cert)
+{
+	char *nss_subject, *nss_issuer;
+	const char *subject, *issuer;
+	SECOidData *signature_oid_data, *public_key_oid_data;
+	const char *signature_algorithm_desc, *public_key_algorithm_desc;
+
+	nss_subject = CERT_NameToAscii(&cert->subject);
+	subject = (nss_subject != NULL ? nss_subject : "Unknown");
+
+	nss_issuer = CERT_NameToAscii(&cert->issuer);
+	issuer = (nss_issuer != NULL ? nss_issuer : "Unknown");
+
+	signature_oid_data = SECOID_FindOID(&cert->signature.algorithm);
+	signature_algorithm_desc = ((signature_oid_data != NULL && signature_oid_data->desc != NULL) ?
+	    signature_oid_data->desc : "Unknown");
+
+	public_key_oid_data = SECOID_FindOID(&cert->subjectPublicKeyInfo.algorithm.algorithm);
+	public_key_algorithm_desc = ((public_key_oid_data != NULL && public_key_oid_data->desc != NULL) ?
+	    public_key_oid_data->desc : "Unknown");
+
+	log(LOG_DEBUG, "  %s certificate Subject: %s, Issuer: %s, Signature Algorithm: %s, Public Key Algorithm: %s",
+	    prefix, subject, issuer, signature_algorithm_desc, public_key_algorithm_desc);
+
+	if (nss_subject != NULL) {
+		PORT_Free(nss_subject);
+	}
+
+	if (nss_issuer != NULL) {
+		PORT_Free(nss_issuer);
+	}
+}
+
+void
+qdevice_net_nss_handshake_callback(PRFileDesc *fd, void *client_data)
+{
+	SSLChannelInfo ci = { 0 };
+	CERTCertificate *cert;
+
+	if (SSL_GetChannelInfo(fd, &ci, sizeof(ci)) == SECSuccess) {
+		/*
+		 * No easy way to decode this numbers so they are written unencoded.
+		 * Values are in the /usr/include/nss3/sslt.h
+		 * - SSLKEAType - ssl_kea_ecdh = 4, ssl_kea_ecdh_hybrid = 8 (PQC)
+		 * - SSLNamedGroup - ssl_grp_ec_secp256r1 = 23,ssl_grp_kem_mlkem768x25519 = 4588 (PQC)
+		 */
+		log(LOG_DEBUG, "Using TLS channel protocol version: %04x, keaType: %u, keaGroup: %u",
+		    ci.protocolVersion, ci.keaType, ci.keaGroup);
+	} else {
+		log_nss(LOG_WARNING, "qdevice_net_nss_handshake_callback SSL_GetChannelInfo error");
+	}
+
+	cert = SSL_PeerCertificate(fd);
+	if (cert != NULL) {
+		qdevice_net_nss_dump_cert_info("Peer", cert);
+
+		CERT_DestroyCertificate(cert);
+	}
+
+	cert = SSL_LocalCertificate(fd);
+	if (cert != NULL) {
+		qdevice_net_nss_dump_cert_info("Local", cert);
+
+		CERT_DestroyCertificate(cert);
+	}
+}
